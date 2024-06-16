@@ -12,10 +12,11 @@ ESP8266 Code für die Steuerung eines analogen Pendelzuges auf einer kleinen Mod
 * Licht kann ein und ausgeschalten werden
 * eventuell noch Sound (ein und ausschaltbar)
 
-## Hardware
+## Hardware / Umgebung
 
 * L298H Motortreiber
 * Wemos D1 mini (ESP8266)
+* PlatformIO / VisualStudio Code
 
 ### Anschlüsse
 
