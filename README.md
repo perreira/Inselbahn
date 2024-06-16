@@ -4,13 +4,13 @@ ESP8266 Code für die Steuerung eines analogen Pendelzuges auf einer kleinen Mod
 
 ## Features
 
-* Wenn WiFi vorhanden: verbinden mit WiFi, Webseite zur Steuerung
-* Wenn kein WiFi vorhanden: WiFi Accesspoint aufmachen, Webseite zur Steuerung
-* OTA Updates
-* Geschwindigkeit, Pausen und Zeit in der der Fahrstrom aktiv ist können per WebUI eingestellt werden
-* Der Zug pendelt in zufälligen Zeitabständen hin und her.
-* Licht kann ein und ausgeschalten werden
-* eventuell noch Sound (ein und ausschaltbar)
+* [x] Wenn WiFi vorhanden: verbinden mit WiFi, Webseite zur Steuerung
+* [x] Wenn kein WiFi vorhanden: WiFi Accesspoint aufmachen, Webseite zur Steuerung
+* [x] OTA Updates
+* [x] Geschwindigkeit, Pausen und Zeit in der der Fahrstrom aktiv ist können per WebUI eingestellt werden
+* [x] Der Zug pendelt in zufälligen Zeitabständen hin und her.
+* [] Licht kann ein und ausgeschalten werden
+* [] eventuell noch Sound (ein und ausschaltbar)
 
 ## Hardware / Umgebung
 
