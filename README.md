@@ -9,8 +9,8 @@ ESP8266 Code für die Steuerung eines analogen Pendelzuges auf einer kleinen Mod
 * [x] OTA Updates
 * [x] Geschwindigkeit, Pausen und Zeit in der der Fahrstrom aktiv ist können per WebUI eingestellt werden
 * [x] Der Zug pendelt in zufälligen Zeitabständen hin und her.
-* [] Licht kann ein und ausgeschalten werden
-* [] eventuell noch Sound (ein und ausschaltbar)
+* [ ] Licht kann ein und ausgeschalten werden
+* [ ] eventuell noch Sound (ein und ausschaltbar)
 
 ## Hardware / Umgebung
 
