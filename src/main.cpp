@@ -9,17 +9,17 @@
 #define FWD 5 // Pin D1
 #define BCK 4 // Pin D2
 
-#define DRIVETIME 30000 // time the car takes to drive the full line
-#define PAUSEMIN 1000 // min pause time at station
-#define PAUSEMAX 10000  // max pause time at station
-#define SPEED 100 // 0 to 255 Speed for PWM output
+int ispeed = 100; // 0 to 255 speed for PWM output
+int ipausemax = 10;
+int ipausemin = 1;
+int idrivetime = 30;
 
 unsigned long previousMillis;
 unsigned long currentMillis;
 unsigned long interval = 200UL;
 
 bool ledOn = false; // keep track of the led state
-int mode = 0; // 0: Pause Pier, 1: Vorwärts, 2: Pause Haltepunkt,  3: Rückwärts;
+int mode = 0;       // 0: Pause Pier, 1: Vorwärts, 2: Pause Haltepunkt,  3: Rückwärts;
 
 WiFiManager wm;
 boolean OTA_enable;
@@ -28,51 +28,50 @@ std::unique_ptr<ESP8266WebServer> server;
 
 void drive()
 {
-   if( millis() - previousMillis >= interval) 
+  if (millis() - previousMillis >= interval)
   {
     previousMillis = millis();
-    
 
     switch (mode)
     {
-    case 0/* constant-expression */:
+    case 0 /* constant-expression */:
       /* Pause Pier */
       mode = 1;
       digitalWrite(LED, HIGH);
       analogWrite(FWD, 0);
       analogWrite(BCK, 0);
-      interval = random( PAUSEMIN, PAUSEMAX);   // set interval for pause (random)
+      interval = random(ipausemin * 1000, ipausemax * 1000); // set interval for pause (random)
       break;
-    case 1/* constant-expression */:
+    case 1 /* constant-expression */:
       /* Vorwärts */
       mode = 2;
       analogWrite(LED, 50);
-      analogWrite(FWD, SPEED);
+      analogWrite(FWD, ispeed);
       analogWrite(BCK, 0);
-      interval = DRIVETIME; // Set interval for next step (drive, 10s)
+      interval = idrivetime * 1000; // Set interval for next step (drive, 10s)
       break;
-    case 2/* constant-expression */:
+    case 2 /* constant-expression */:
       /* Pause Haltepunkt */
       mode = 3;
-      interval = random( PAUSEMIN, PAUSEMAX);   // set interval for pause (random)
+      interval = random(ipausemin * 1000, ipausemax * 1000); // set interval for pause (random)
       digitalWrite(LED, HIGH);
       analogWrite(FWD, 0);
       analogWrite(BCK, 0);
       break;
-    case 3/* constant-expression */:
+    case 3 /* constant-expression */:
       /* Rückwärts */
       mode = 0;
       analogWrite(LED, 100);
       analogWrite(FWD, 0);
-      analogWrite(BCK, SPEED);
-      interval = DRIVETIME; // Set interval for next step (drive, 10s)
+      analogWrite(BCK, ispeed);
+      interval = idrivetime * 1000; // Set interval for next step (drive, 10s)
 
-      break;    
+      break;
     default:
       break;
     }
     // toggle
-    //digitalWrite( LED, digitalRead( LED) == HIGH ? LOW : HIGH);
+    // digitalWrite( LED, digitalRead( LED) == HIGH ? LOW : HIGH);
   }
 }
 
@@ -87,19 +86,26 @@ void handleRoot()
   temp.printf("\
 <html>\
   <head>\
-    <meta http-equiv='refresh' content='1'/>\
-    <title>ESP8266 Demo</title>\
+    <title>Inselbahn Config</title>\
     <style>\
       body { background-color: #cccccc; font-family: Arial, Helvetica, Sans-Serif; Color: #000088; }\
     </style>\
   </head>\
   <body>\
-    <h1>Hello from ESP8266!</h1>\
+    <h1>Inselbahn Config</h1>\
     <p>Uptime: %02d:%02d:%02d</p>\
-    <p>Mode %i</p>\
+    <p>Modus: %i</p>\
+    <h2>Einstellungen</h2><br>\
+    <form method=\"post\" enctype=\"application/x-www-form-urlencoded\" action=\"/postplain/\">\
+      Geschwindigkeit (1-255):&nbsp;<input type=\"number\" name=\"Speed\" value=\"%i\" min=\"1\" max=\"255\"><br>\
+      Fahrt aktiv (25-240 s):&nbsp;<input type=\"number\" name=\"DriveTime\" value=\"%i\" min=\"25\" max=\"240\"><br>\
+      Pause minimum (1-100 s):&nbsp;<input type=\"number\" name=\"PauseMin\" value=\"%i\" min=\"1\" max=\"100\"><br>\
+      Pause maximum (1-100 s):&nbsp;<input type=\"number\" name=\"PauseMax\" value=\"%i\" min=\"1\" max=\"100\"><br>\
+      <input type=\"submit\" value=\"Submit\"><br>\
+    </form>\
   </body>\
 </html>",
-              hr, min % 60, sec % 60, mode);
+              hr, min % 60, sec % 60, mode, ispeed, idrivetime, ipausemin, ipausemax);
   server->send(200, "text/html", temp.c_str());
 }
 
@@ -120,6 +126,50 @@ void handleNotFound()
   server->send(404, "text/plain", message);
 }
 
+void handlePlain()
+{
+  if (server->method() != HTTP_POST)
+  {
+    server->send(405, "text/plain", "Method Not Allowed");
+  }
+  else
+  {
+    if (server->hasArg("Speed"))
+    {
+      ispeed = server->arg("Speed").toInt();
+    }
+    if (server->hasArg("DriveTime"))
+    {
+      idrivetime = server->arg("DriveTime").toInt();
+    }
+    if (server->hasArg("PauseMin"))
+    {
+      ipausemin = server->arg("PauseMin").toInt();
+    }
+    if (server->hasArg("PauseMax"))
+    {
+      ipausemax = server->arg("PauseMax").toInt();
+    }
+  }
+  // Set everything to sane values if toInt failed
+  if (ispeed == 0) ispeed = 100;
+  if (idrivetime == 0) idrivetime = 30;
+  if (ipausemax == 0) ipausemax = 10;
+  if (ipausemin == 0) ipausemin = 1;
+  
+  // Catch pause max smaller than min and switch values
+  if (ipausemax < ipausemin)
+  {
+    int tmp = ipausemax;
+    ipausemax = ipausemin;
+    ipausemin = tmp;
+  }
+
+  // Send redirect to main page
+  server->sendHeader("Location", String("/"), true);
+  server->send(302, "text/plain", "");
+}
+
 void setup()
 {
   // Debugging on serial port
@@ -132,6 +182,7 @@ void setup()
 
   digitalWrite(LED, LOW); // turn led off
   ledOn = false;
+  ispeed = 100;
 
   // Start WiFi Manager
   WiFi.mode(WIFI_STA); // explicitly set mode, esp defaults to STA+AP
@@ -149,7 +200,8 @@ void setup()
   {
     Serial.println("connected...yeey :)");
     OTA_enable = true;
-    ArduinoOTA.onStart([](){
+    ArduinoOTA.onStart([]()
+                       {
     String type;
     if (ArduinoOTA.getCommand() == U_FLASH) {
       type = "sketch";
@@ -159,10 +211,12 @@ void setup()
 
     // NOTE: if updating FS this would be the place to unmount FS using FS.end()
     Serial.println("Start updating " + type); });
-    ArduinoOTA.onEnd([](){ Serial.println("\nEnd"); });
+    ArduinoOTA.onEnd([]()
+                     { Serial.println("\nEnd"); });
     ArduinoOTA.onProgress([](unsigned int progress, unsigned int total)
                           { Serial.printf("Progress: %u%%\r", (progress / (total / 100))); });
-    ArduinoOTA.onError([](ota_error_t error){
+    ArduinoOTA.onError([](ota_error_t error)
+                       {
     Serial.printf("Error[%u]: ", error);
     if (error == OTA_AUTH_ERROR) {
       Serial.println("Auth Failed");
@@ -192,7 +246,7 @@ void setup()
   server.reset(new ESP8266WebServer(WiFi.localIP(), 80));
   // Define web adresses and hooks
   server->on("/", handleRoot);
-  server->on("/inline", [](){ server->send(200, "text/plain", "this works as well"); });
+  server->on("/postplain/", handlePlain);
   server->onNotFound(handleNotFound);
 
   // Start Webserver
@@ -210,6 +264,4 @@ void loop()
 
   currentMillis = millis();
   drive();
-
-
 }
