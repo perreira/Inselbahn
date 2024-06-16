@@ -26,6 +26,7 @@ boolean OTA_enable;
 
 std::unique_ptr<ESP8266WebServer> server;
 
+// Funktion zur Steuerung des Fahrstroms über L298
 void drive()
 {
   if (millis() - previousMillis >= interval)
@@ -75,6 +76,8 @@ void drive()
   }
 }
 
+// Funktionen für den Webserver
+// Hauptseite
 void handleRoot()
 {
   int sec = millis() / 1000;
@@ -109,6 +112,7 @@ void handleRoot()
   server->send(200, "text/html", temp.c_str());
 }
 
+// Webserver: Seite nicht gefunden
 void handleNotFound()
 {
   String message = "File Not Found\n\n";
@@ -126,6 +130,7 @@ void handleNotFound()
   server->send(404, "text/plain", message);
 }
 
+// Webserver: Formulardaten handler
 void handlePlain()
 {
   if (server->method() != HTTP_POST)
@@ -170,6 +175,9 @@ void handlePlain()
   server->send(302, "text/plain", "");
 }
 
+//
+// SETUP
+//
 void setup()
 {
   // Debugging on serial port
@@ -259,9 +267,9 @@ void setup()
 void loop()
 {
   // put your main code here, to run repeatedly:
-  server->handleClient();
-  ArduinoOTA.handle();
+  server->handleClient(); // Webserver Handler
+  ArduinoOTA.handle(); // Over the air update Handler
 
   currentMillis = millis();
-  drive();
+  drive(); // Fahrstromhandler
 }
